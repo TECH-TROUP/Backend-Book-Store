@@ -15,6 +15,14 @@ User.create = (user, callback) => {
   );
 };
 
+User.getByUsername = (username, callback) => {
+  const query = "SELECT * FROM `book_store_db`.`users` WHERE username = ?";
+  db.query(query, [username], (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows[0]);
+  });
+};
+
 User.delete = (userId, callback) => {
   const query = "DELETE FROM `book_store_db`.`users` WHERE (`id` = ?)";
   db.query(query, [userId], (err, res) => {
