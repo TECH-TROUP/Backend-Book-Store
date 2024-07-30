@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const User = require("../models/User");
 
 const auth = (req, res, next) => {
   const token = req.header("Authorization").replace("Bearer ", "");
@@ -11,7 +12,20 @@ const auth = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-    next();
+
+    // Fetch user from database to get the role
+    User.getById(req.user.id, (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      req.user.role_id = user.role_id; // Add role_id to the req.user object
+      next();
+    });
   } catch (error) {
     res.status(401).json({ error: "Invalid token" });
   }
