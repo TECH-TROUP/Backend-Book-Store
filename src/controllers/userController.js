@@ -10,21 +10,31 @@ exports.createUser = (req, res) => {
     return res.status(400).json({ error: "Please Provide required fields" });
   }
 
-  bcrypt.genSalt(10, (err, salt) => {
-    if (err) throw err;
-    bcrypt.hash(password, salt, (err, hash) => {
+  User.existsByUsername(username, (err, exists) => {
+    if (err) {
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    if (exists) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
+
+    bcrypt.genSalt(10, (err, salt) => {
       if (err) throw err;
+      bcrypt.hash(password, salt, (err, hash) => {
+        if (err) throw err;
 
-      const newUser = {
-        name,
-        username,
-        password: hash,
-        email,
-      };
+        const newUser = {
+          name,
+          username,
+          password: hash,
+          email,
+        };
 
-      User.create(newUser, (err, userId) => {
-        if (err) res.status(500).send(err);
-        else res.status(201).send({ id: userId });
+        User.create(newUser, (err, userId) => {
+          if (err) res.status(500).send(err);
+          else res.status(201).send({ id: userId });
+        });
       });
     });
   });
@@ -74,6 +84,14 @@ exports.loginUser = (req, res) => {
 exports.deleteUser = (req, res) => {
   const userId = req.params.id;
 
+  // Check if the authenticated user is the same as the user being deleted or if the user is an admin
+  if (req.user.id !== parseInt(userId) && req.user.role_id !== 1) {
+    return res.status(403).json({
+      error:
+        "Access denied: You can only delete your own account or you must be an admin",
+    });
+  }
+
   User.delete(userId, (err, result) => {
     if (err) {
       res.status(500).send({ error: "Error deleting user" });
@@ -83,4 +101,56 @@ exports.deleteUser = (req, res) => {
       res.status(200).send({ message: "User deleted successfully" });
     }
   });
+};
+
+exports.updateUser = (req, res) => {
+  const userId = req.params.id;
+  const { name, username, password } = req.body;
+
+  // Check if the authenticated user is the same as the user being updated or if the user is an admin
+  if (req.user.id !== parseInt(userId) && req.user.role_id !== 1) {
+    return res
+      .status(403)
+      .json({
+        error:
+          "Access denied: You can only update your own account or you must be an admin",
+      });
+  }
+
+  if (!name || !username || (password && password.length < 6)) {
+    return res.status(400).json({ error: "Please provide valid fields" });
+  }
+
+  const updatedUser = { name, username };
+
+  if (password) {
+    bcrypt.genSalt(10, (err, salt) => {
+      if (err) throw err;
+      bcrypt.hash(password, salt, (err, hash) => {
+        if (err) throw err;
+
+        updatedUser.password = hash;
+
+        User.update(userId, updatedUser, (err, result) => {
+          if (err) res.status(500).send(err);
+          else if (result.affectedRows === 0) {
+            res.status(404).send({ error: "User not found" });
+          } else {
+            res.status(200).send({ message: "User updated successfully" });
+          }
+        });
+      });
+    });
+  } else {
+    updatedUser.password = undefined;
+
+    User.update(userId, updatedUser, (err, result) => {
+      if (err) res.status(500).send(err);
+      else if (result.affectedRows === 0) {
+        res.status(404).send({ error: "User not found" });
+      } else {
+        res.status(200).send({ message: "User updated successfully" });
+      }
+    });
+  }
 };
