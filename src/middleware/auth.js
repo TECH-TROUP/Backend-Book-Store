@@ -23,7 +23,7 @@ const auth = (req, res, next) => {
         return res.status(404).json({ error: "User not found" });
       }
 
-      req.user.role_id = user.role_id; // Add role_id to the req.user object
+      req.user.role_id = user.role_id; 
       next();
     });
   } catch (error) {
