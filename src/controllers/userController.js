@@ -262,3 +262,17 @@ exports.getUserById = (req, res) => {
     }
   });
 };
+
+exports.getLoggedInUser = (req, res) => {
+  const userId = req.user.id;
+
+  User.getById(userId, (err, user) => {
+    if (err) {
+      res.status(500).send({ error: "Error fetching user details" });
+    } else if (!user) {
+      res.status(404).send({ error: "User not found" });
+    } else {
+      res.status(200).send(user);
+    }
+  });
+};
