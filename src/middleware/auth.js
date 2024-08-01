@@ -3,7 +3,17 @@ require("dotenv").config();
 const User = require("../models/User");
 
 const auth = (req, res, next) => {
-  const token = req.header("Authorization").replace("Bearer ", "");
+  const authHeader = req.header("Authorization");
+
+  if (!authHeader) {
+    return res.status(401).json({ error: "Authorization header missing" });
+  }
+
+  if (!authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authorization header malformed" });
+  }
+
+  const token = authHeader.replace("Bearer ", "");
 
   if (!token) {
     return res.status(401).json({ error: "No token provided" });
@@ -23,7 +33,14 @@ const auth = (req, res, next) => {
         return res.status(404).json({ error: "User not found" });
       }
 
-      req.user.role_id = user.role_id; 
+      // Check if the username in the token matches the username in the database
+      if (req.user.username !== user.username) {
+        return res
+          .status(401)
+          .json({ error: "Token is outdated, please log in again" });
+      }
+
+      req.user.role_id = user.role_id;
       next();
     });
   } catch (error) {

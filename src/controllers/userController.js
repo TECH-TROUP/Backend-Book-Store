@@ -6,34 +6,44 @@ require("dotenv").config();
 exports.createUser = (req, res) => {
   const { name, username, password, email } = req.body;
 
-  if (!name || !password || !username || !email) {
+  if (!name || (password && password.length < 6) || !username || !email) {
     return res.status(400).json({ error: "Please Provide required fields" });
   }
 
-  User.existsByUsername(username, (err, exists) => {
+  User.existsByUsername(username, (err, usernameExists) => {
     if (err) {
       return res.status(500).json({ error: "Internal server error" });
     }
 
-    if (exists) {
+    if (usernameExists) {
       return res.status(400).json({ error: "Username already taken" });
     }
 
-    bcrypt.genSalt(10, (err, salt) => {
-      if (err) throw err;
-      bcrypt.hash(password, salt, (err, hash) => {
+    User.existsByEmail(email, (err, emailExists) => {
+      if (err) {
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      if (emailExists) {
+        return res.status(400).json({ error: "Email already in use" });
+      }
+
+      bcrypt.genSalt(10, (err, salt) => {
         if (err) throw err;
+        bcrypt.hash(password, salt, (err, hash) => {
+          if (err) throw err;
 
-        const newUser = {
-          name,
-          username,
-          password: hash,
-          email,
-        };
+          const newUser = {
+            name,
+            username,
+            password: hash,
+            email,
+          };
 
-        User.create(newUser, (err, userId) => {
-          if (err) res.status(500).send(err);
-          else res.status(201).send({ id: userId });
+          User.create(newUser, (err, userId) => {
+            if (err) res.status(500).send(err);
+            else res.status(201).send({ id: userId });
+          });
         });
       });
     });
@@ -109,48 +119,146 @@ exports.updateUser = (req, res) => {
 
   // Check if the authenticated user is the same as the user being updated or if the user is an admin
   if (req.user.id !== parseInt(userId) && req.user.role_id !== 1) {
-    return res
-      .status(403)
-      .json({
-        error:
-          "Access denied: You can only update your own account or you must be an admin",
-      });
+    return res.status(403).json({
+      error:
+        "Access denied: You can only update your own account or you must be an admin",
+    });
   }
 
-  if (!name || !username || (password && password.length < 6)) {
+  if (!name && !username && !password) {
     return res.status(400).json({ error: "Please provide valid fields" });
   }
 
-  const updatedUser = { name, username };
+  const updatedUser = {};
 
-  if (password) {
-    bcrypt.genSalt(10, (err, salt) => {
-      if (err) throw err;
-      bcrypt.hash(password, salt, (err, hash) => {
-        if (err) throw err;
+  if (name) {
+    updatedUser.name = name;
+  }
 
-        updatedUser.password = hash;
-
-        User.update(userId, updatedUser, (err, result) => {
-          if (err) res.status(500).send(err);
-          else if (result.affectedRows === 0) {
-            res.status(404).send({ error: "User not found" });
-          } else {
-            res.status(200).send({ message: "User updated successfully" });
+  const checkUsername = () => {
+    if (username) {
+      // Check if the new username is different from the existing username
+      if (username !== req.user.username) {
+        User.existsByUsername(username, (err, usernameExists) => {
+          if (err) {
+            return res.status(500).json({ error: "Internal server error" });
           }
+
+          if (usernameExists) {
+            return res.status(400).json({ error: "Username already taken" });
+          }
+
+          // Proceed with the username update
+          updatedUser.username = username;
+          updateUserInDB();
+        });
+      } else {
+        // The new username is the same as the existing username
+        updatedUser.username = username;
+        updateUserInDB();
+      }
+    } else {
+      // No new username provided, proceed to update
+      updateUserInDB();
+    }
+  };
+
+  const updateUserInDB = () => {
+    if (password) {
+      if (password.length < 6) {
+        return res
+          .status(400)
+          .json({ error: "Password must be at least 6 characters long" });
+      }
+
+      bcrypt.genSalt(10, (err, salt) => {
+        if (err) throw err;
+        bcrypt.hash(password, salt, (err, hash) => {
+          if (err) throw err;
+
+          updatedUser.password = hash;
+
+          User.update(userId, updatedUser, (err, result) => {
+            if (err) {
+              if (err.code === "ER_DUP_ENTRY") {
+                return res
+                  .status(400)
+                  .json({ error: "Username already taken" });
+              }
+              res.status(500).json({ error: "Error updating user" });
+            } else if (result.affectedRows === 0) {
+              res.status(404).json({ error: "User not found" });
+            } else {
+              // Generate a new token with updated information
+              const token = jwt.sign(
+                {
+                  id: parseInt(userId),
+                  username: updatedUser.username || req.user.username,
+                  email: req.user.email,
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: "1h" }
+              );
+
+              res.status(200).json({
+                message: "User updated successfully",
+                token: token,
+              });
+            }
+          });
         });
       });
-    });
-  } else {
-    updatedUser.password = undefined;
+    } else {
+      User.update(userId, updatedUser, (err, result) => {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY") {
+            return res.status(400).json({ error: "Username already taken" });
+          }
+          res.status(500).json({ error: "Error updating user" });
+        } else if (result.affectedRows === 0) {
+          res.status(404).json({ error: "User not found" });
+        } else {
+          // Generate a new token with updated information
+          const token = jwt.sign(
+            {
+              id: parseInt(userId),
+              username: updatedUser.username || req.user.username,
+              email: req.user.email,
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+          );
 
-    User.update(userId, updatedUser, (err, result) => {
-      if (err) res.status(500).send(err);
-      else if (result.affectedRows === 0) {
-        res.status(404).send({ error: "User not found" });
-      } else {
-        res.status(200).send({ message: "User updated successfully" });
-      }
+          res.status(200).json({
+            message: "User updated successfully",
+            token: token,
+          });
+        }
+      });
+    }
+  };
+
+  checkUsername();
+};
+
+exports.getUserById = (req, res) => {
+  const userId = req.params.id;
+
+  // Check if the authenticated user is the same as the user being fetched or if the user is an admin
+  if (req.user.id !== parseInt(userId) && req.user.role_id !== 1) {
+    return res.status(403).json({
+      error:
+        "Access denied: You can only access your own account details or you must be an admin",
     });
   }
+
+  User.getById(userId, (err, user) => {
+    if (err) {
+      res.status(500).send({ error: "Error fetching user details" });
+    } else if (!user) {
+      res.status(404).send({ error: "User not found" });
+    } else {
+      res.status(200).send(user);
+    }
+  });
 };

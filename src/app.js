@@ -1,6 +1,13 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const userRoutes = require("./routes/userRoutes");
+const bookRoutes = require("./routes/bookRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+const orderItemRoutes = require("./routes/orderItemRoutes");
+const rentalRoutes = require("./routes/rentalRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+
 const cors = require("cors");
 
 // const crypto = require("crypto");
@@ -18,5 +25,11 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 app.use("/api", userRoutes);
+app.use("/api", bookRoutes);
+app.use("/api", categoryRoutes);
+app.use("/api", orderRoutes);
+app.use("/api", orderItemRoutes);
+app.use("/api", rentalRoutes);
+app.use("/api", paymentRoutes);
 
 module.exports = app;

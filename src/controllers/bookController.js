@@ -85,3 +85,46 @@ exports.getBookById = (req, res) => {
     }
   });
 };
+
+exports.getBooksByCategory = (req, res) => {
+  const categoryId = req.params.categoryId;
+
+  Book.getByCategory(categoryId, (err, books) => {
+    if (err) res.status(500).send(err);
+    else if (books.length === 0) {
+      res.status(404).send({ error: "No books found for this category" });
+    } else {
+      res.status(200).send(books);
+    }
+  });
+};
+
+exports.searchBooks = (req, res) => {
+  const searchTerm = req.query.q;
+
+  if (!searchTerm) {
+    return res.status(400).json({ error: "Please provide a search term" });
+  }
+
+  Book.search(searchTerm, (err, books) => {
+    if (err) res.status(500).send(err);
+    else res.status(200).send(books);
+  });
+};
+
+exports.filterBooks = (req, res) => {
+  const filters = {
+    minPrice: req.query.minPrice,
+    maxPrice: req.query.maxPrice,
+    available:
+      req.query.available !== undefined
+        ? Boolean(req.query.available)
+        : undefined,
+    categoryId: req.query.categoryId,
+  };
+
+  Book.filter(filters, (err, books) => {
+    if (err) res.status(500).send(err);
+    else res.status(200).send(books);
+  });
+};

@@ -23,5 +23,8 @@ router.put(
 router.delete("/books/:id", auth, checkAdmin, bookController.deleteBook);
 router.get("/books", bookController.getAllBooks);
 router.get("/books/:id", bookController.getBookById);
+router.get("/books/category/:categoryId", bookController.getBooksByCategory);
+router.get("/books/search", bookController.searchBooks);
+router.get("/books/filter", bookController.filterBooks);
 
 module.exports = router;
