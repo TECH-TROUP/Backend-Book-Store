@@ -25,13 +25,13 @@ User.existsByUsername = (username, callback) => {
 };
 
 User.existsByEmail = (email, callback) => {
-  const query = "SELECT COUNT(*) as count FROM `book_store_db`.`users` WHERE email = ?";
+  const query =
+    "SELECT COUNT(*) as count FROM `book_store_db`.`users` WHERE email = ?";
   db.query(query, [email], (err, rows) => {
     if (err) callback(err, null);
     else callback(null, rows[0].count > 0);
   });
 };
-
 
 User.getByUsername = (username, callback) => {
   const query = "SELECT * FROM `book_store_db`.`users` WHERE username = ?";
@@ -42,7 +42,8 @@ User.getByUsername = (username, callback) => {
 };
 
 User.getById = (userId, callback) => {
-  const query = "SELECT id, name, username, email, role_id FROM `book_store_db`.`users` WHERE id = ?";
+  const query =
+    "SELECT id, name, username, email, role_id FROM `book_store_db`.`users` WHERE id = ?";
   db.query(query, [userId], (err, row) => {
     if (err) callback(err, null);
     else callback(null, row[0]);
@@ -61,7 +62,6 @@ User.update = (userId, updatedUser, callback) => {
   let query = "UPDATE `book_store_db`.`users` SET";
   const params = [];
 
-
   if (updatedUser.name) {
     query += " `name` = ?,";
     params.push(updatedUser.name);
@@ -75,13 +75,33 @@ User.update = (userId, updatedUser, callback) => {
     params.push(updatedUser.password);
   }
 
-
   query = query.slice(0, -1) + " WHERE `id` = ?";
   params.push(userId);
 
   db.query(query, params, (err, res) => {
     if (err) callback(err, null);
     else callback(null, res);
+  });
+};
+
+User.updateRole = (userId, roleId, callback) => {
+  let query = "UPDATE `book_store_db`.`users` SET `role_id` = ? WHERE `id` = ?";
+
+  const params = [roleId, userId];
+
+  // Execute the query
+  db.query(query, params, (err, res) => {
+    if (err) callback(err, null);
+    else callback(null, res);
+  });
+};
+
+User.getByRoleId = (roleId, callback) => {
+  const query =
+    "SELECT id, name, username, email, role_id FROM `book_store_db`.`users` WHERE `role_id` = ?";
+  db.query(query, [roleId], (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows);
   });
 };
 
