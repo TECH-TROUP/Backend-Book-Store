@@ -172,3 +172,17 @@ exports.getBooksByVendorId = (req, res) => {
     res.status(200).json(books);
   });
 };
+
+exports.getBooksByStatusId = (req, res) => {
+  const statusId = req.params.statusId;
+
+  Book.getByStatusId(statusId, (err, books) => {
+    if (err) {
+      return res.status(500).json({ error: "Failed to retrieve books" });
+    }
+    if (books.length === 0) {
+      return res.status(404).json({ error: "No books found for this status" });
+    }
+    res.status(200).json(books);
+  });
+};

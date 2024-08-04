@@ -111,7 +111,18 @@ Book.delete = (bookId, callback) => {
 
 // Get all books
 Book.getAll = (callback) => {
-  const query = "SELECT * FROM books";
+  const query = `
+    SELECT books.*, 
+           categories.category_name, 
+           categories.description AS category_description,
+           statuses.label AS status_label,
+           statuses.description AS status_description,
+           statuses.bg_color AS status_bg_color,
+           statuses.color AS status_text_color
+    FROM books
+    JOIN categories ON books.category_id = categories.id
+    JOIN statuses ON books.status_id = statuses.id`;
+
   db.query(query, (err, rows) => {
     if (err) callback(err, null);
     else callback(null, rows);
@@ -194,6 +205,27 @@ Book.getByVendorId = (vendorId, callback) => {
     JOIN statuses ON books.status_id = statuses.id
     WHERE books.vendor_id = ?`;
   db.query(query, [vendorId], (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows);
+  });
+};
+
+// Get books by status ID
+Book.getByStatusId = (statusId, callback) => {
+  const query = `
+    SELECT books.*, 
+           categories.category_name, 
+           categories.description AS category_description,
+           statuses.label AS status_label,
+           statuses.description AS status_description,
+           statuses.bg_color AS status_bg_color,
+           statuses.color AS status_text_color
+    FROM books
+    JOIN categories ON books.category_id = categories.id
+    JOIN statuses ON books.status_id = statuses.id
+    WHERE books.status_id = ?`;
+
+  db.query(query, [statusId], (err, rows) => {
     if (err) callback(err, null);
     else callback(null, rows);
   });
