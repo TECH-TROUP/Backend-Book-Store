@@ -119,13 +119,7 @@ exports.returnBook = (req, res) => {
 
       const bookId = rental.book_id;
 
-      // Update book availability
-      Book.updateAvailability(bookId, true, (err, result) => {
-        if (err)
-          return res.status(500).json({ error: "Internal server error" });
-
-        res.status(200).json({ message: "Book returned successfully" });
-      });
+      // Update book availability - Need to do
     });
   });
 };
