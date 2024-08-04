@@ -6,9 +6,32 @@ const checkAdmin = require("../middleware/checkAdmin");
 
 // Category routes
 router.post("/categories", auth, checkAdmin, categoryController.createCategory);
-router.put("/categories/:id", auth, checkAdmin, categoryController.updateCategory);
-router.delete("/categories/:id", auth, checkAdmin, categoryController.deleteCategory);
+router.put(
+  "/categories/:id",
+  auth,
+  checkAdmin,
+  categoryController.updateCategory
+);
+router.delete(
+  "/categories/:id",
+  auth,
+  checkAdmin,
+  categoryController.deleteCategory
+);
 router.get("/categories", categoryController.getAllCategories);
 router.get("/categories/:id", categoryController.getCategoryById);
+
+router.post(
+  "/categories/:id/increment",
+  auth,
+  checkAdmin,
+  categoryController.incrementCategoryCount
+);
+router.post(
+  "/categories/:id/decrement",
+  auth,
+  checkAdmin,
+  categoryController.decrementCategoryCount
+);
 
 module.exports = router;
