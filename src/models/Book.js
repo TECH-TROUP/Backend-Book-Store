@@ -1,11 +1,13 @@
 const db = require("../config/db");
+const fs = require("fs");
+const path = require("path");
 
 const Book = {};
 
 // Add a new book
 Book.create = (book, callback) => {
   const query =
-    "INSERT INTO books (title, author, price, description, stock, available, category_id, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO books (title, author, price, description, stock, category_id, image_url, vendor_id, status_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
   db.query(
     query,
     [
@@ -14,9 +16,10 @@ Book.create = (book, callback) => {
       book.price,
       book.description,
       book.stock,
-      book.available,
       book.category_id,
       book.image_url,
+      book.vendor_id,
+      book.status_id,
     ],
     (err, res) => {
       if (err) callback(err, null);
@@ -25,36 +28,84 @@ Book.create = (book, callback) => {
   );
 };
 
-// Update a book
 Book.update = (bookId, updatedBook, callback) => {
-  const query =
-    "UPDATE books SET title = ?, author = ?, price = ?, description = ?, stock = ?, available = ?, category_id = ?, image_url = ? WHERE id = ?";
-  db.query(
-    query,
-    [
-      updatedBook.title,
-      updatedBook.author,
-      updatedBook.price,
-      updatedBook.description,
-      updatedBook.stock,
-      updatedBook.available,
-      updatedBook.category_id,
-      updatedBook.image_url,
-      bookId,
-    ],
-    (err, res) => {
-      if (err) callback(err, null);
-      else callback(null, res);
+  Book.getById(bookId, (err, result) => {
+    if (err) {
+      callback(err, null);
+      return;
     }
-  );
+
+    const book = result[0];
+    const oldImagePath = book.image_url;
+    const newImagePath = updatedBook.image_url;
+
+    if (newImagePath && oldImagePath && oldImagePath !== newImagePath) {
+      const filePath = path.join(__dirname, "../../", oldImagePath);
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error("Error deleting the old image file:", unlinkErr);
+        }
+      });
+    }
+
+    // Update the book details in the database
+    const updateQuery = `UPDATE books SET title = ?, author = ?, price = ?, description = ?, stock = ?, category_id = ?, image_url = ? WHERE id = ?`;
+    db.query(
+      updateQuery,
+      [
+        updatedBook.title,
+        updatedBook.author,
+        updatedBook.price,
+        updatedBook.description,
+        updatedBook.stock,
+        updatedBook.category_id,
+        newImagePath,
+        bookId,
+      ],
+      (updateErr, updateRes) => {
+        if (updateErr) callback(updateErr, null);
+        else callback(null, updateRes);
+      }
+    );
+  });
 };
 
 // Delete a book
 Book.delete = (bookId, callback) => {
-  const query = "DELETE FROM books WHERE id = ?";
-  db.query(query, [bookId], (err, res) => {
-    if (err) callback(err, null);
-    else callback(null, res);
+  // First, get the book to retrieve the image path
+  Book.getById(bookId, (err, result) => {
+    if (err) {
+      callback(err, null);
+      return;
+    }
+
+    const book = result[0]; // Assuming result is an array with the book object
+    const imagePath = book.image_url;
+
+    // Delete the book from the database
+    const deleteQuery = "DELETE FROM books WHERE id = ?";
+    db.query(deleteQuery, [bookId], (deleteErr, deleteRes) => {
+      if (deleteErr) {
+        callback(deleteErr, null);
+        return;
+      }
+
+      // Delete the image file if it exists
+      if (imagePath) {
+        const filePath = path.join(__dirname, "../../", imagePath);
+
+        fs.unlink(filePath, (unlinkErr) => {
+          if (unlinkErr) {
+            console.error("Error deleting the image file:", unlinkErr);
+          }
+          // Proceed to callback
+          callback(null, deleteRes);
+        });
+      } else {
+        // No image to delete, proceed to callback
+        callback(null, deleteRes);
+      }
+    });
   });
 };
 
@@ -119,14 +170,14 @@ Book.filter = (filters, callback) => {
     params.push(filters.maxPrice);
   }
 
-  if (filters.available !== undefined) {
-    query += " AND available = ?";
-    params.push(filters.available);
-  }
-
   if (filters.categoryId) {
     query += " AND category_id = ?";
     params.push(filters.categoryId);
+  }
+
+  if (filters.statusId) {
+    query += " AND status_id = ?";
+    params.push(filters.statusId);
   }
 
   db.query(query, params, (err, rows) => {
@@ -135,12 +186,16 @@ Book.filter = (filters, callback) => {
   });
 };
 
-// Update book availability
-Book.updateAvailability = (bookId, available, callback) => {
-  const query = "UPDATE books SET available = ? WHERE id = ?";
-  db.query(query, [available, bookId], (err, result) => {
+// Get books by vendor ID
+Book.getByVendorId = (vendorId, callback) => {
+  const query = `SELECT books.*, categories.category_name, categories.description AS category_description, statuses.label AS status_label, statuses.description AS status_description, statuses.bg_color as status_bg_color, statuses.color as status_text_color
+    FROM books
+    JOIN categories ON books.category_id = categories.id
+    JOIN statuses ON books.status_id = statuses.id
+    WHERE books.vendor_id = ?`;
+  db.query(query, [vendorId], (err, rows) => {
     if (err) callback(err, null);
-    else callback(null, result);
+    else callback(null, rows);
   });
 };
 
