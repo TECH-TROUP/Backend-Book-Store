@@ -241,6 +241,49 @@ exports.updateUser = (req, res) => {
   checkUsername();
 };
 
+exports.updateUserRole = (req, res) => {
+  const { userId, roleId } = req.body;
+
+  // Check if the authenticated user is an admin
+  if (req.user.role_id !== 1) {
+    return res.status(403).json({
+      error: "Access denied: You must be an admin to update user roles",
+    });
+  }
+
+  // Check if the user is trying to update their own role
+  if (req.user.id === userId) {
+    return res.status(403).json({
+      error: "You cannot update your own role",
+    });
+  }
+
+  // Validate the userId and roleId
+  if (
+    !userId ||
+    !roleId ||
+    typeof userId !== "number" ||
+    typeof roleId !== "number" ||
+    userId <= 0 ||
+    roleId <= 0
+  ) {
+    return res
+      .status(400)
+      .json({ error: "Invalid user ID or role ID provided" });
+  }
+
+  // Proceed with the role update
+  User.updateRole(userId, roleId, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: "Error updating user role" });
+    } else if (result.affectedRows === 0) {
+      res.status(404).json({ error: "User not found" });
+    } else {
+      res.status(200).json({ message: "User role updated successfully" });
+    }
+  });
+};
+
 exports.getUserById = (req, res) => {
   const userId = req.params.id;
 
@@ -274,5 +317,27 @@ exports.getLoggedInUser = (req, res) => {
     } else {
       res.status(200).send(user);
     }
+  });
+};
+
+exports.getUsersByRoleId = (req, res) => {
+  const roleId = req.params.roleId;
+
+  if (req.user.role_id !== 1) {
+    return res.status(403).json({
+      error: "Access denied: Only admins can access this information",
+    });
+  }
+
+  User.getByRoleId(roleId, (err, users) => {
+    if (err) {
+      return res.status(500).json({ error: "Error fetching users by role" });
+    }
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ error: "No users found with this role" });
+    }
+
+    res.status(200).json(users);
   });
 };
