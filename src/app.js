@@ -21,6 +21,9 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
+// Serve static files from the 'uploads' directory
+app.use("/uploads", express.static("uploads"));
+
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
