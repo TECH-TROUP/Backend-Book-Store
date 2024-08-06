@@ -8,6 +8,7 @@ const upload = require("../middleware/upload");
 const checkAdminOrVendor = require("../middleware/checkAdminOrVendor");
 
 // Book routes
+
 router.post(
   "/books",
   auth,
@@ -41,5 +42,7 @@ router.put(
   checkAdminOrVendor,
   bookController.updateBookStatus
 );
+
+router.post("/books/approve", auth, checkAdmin, bookController.approveBook);
 
 module.exports = router;

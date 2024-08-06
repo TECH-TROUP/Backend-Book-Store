@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const fs = require("fs");
 const path = require("path");
+const BookCopy = require("./BookCopy");
 
 const Book = {};
 
@@ -79,32 +80,40 @@ Book.delete = (bookId, callback) => {
       return;
     }
 
-    const book = result[0]; // Assuming result is an array with the book object
+    const book = result[0];
     const imagePath = book.image_url;
 
-    // Delete the book from the database
-    const deleteQuery = "DELETE FROM books WHERE id = ?";
-    db.query(deleteQuery, [bookId], (deleteErr, deleteRes) => {
-      if (deleteErr) {
-        callback(deleteErr, null);
+    // Delete the book copies from the book_copies table
+    BookCopy.deleteByBookId(bookId, (deleteCopiesErr, deleteCopiesRes) => {
+      if (deleteCopiesErr) {
+        callback(deleteCopiesErr, null);
         return;
       }
 
-      // Delete the image file if it exists
-      if (imagePath) {
-        const filePath = path.join(__dirname, "../../", imagePath);
+      // Delete the book from the database
+      const deleteQuery = "DELETE FROM books WHERE id = ?";
+      db.query(deleteQuery, [bookId], (deleteErr, deleteRes) => {
+        if (deleteErr) {
+          callback(deleteErr, null);
+          return;
+        }
 
-        fs.unlink(filePath, (unlinkErr) => {
-          if (unlinkErr) {
-            console.error("Error deleting the image file:", unlinkErr);
-          }
-          // Proceed to callback
+        // Delete the image file if it exists
+        if (imagePath) {
+          const filePath = path.join(__dirname, "../../", imagePath);
+
+          fs.unlink(filePath, (unlinkErr) => {
+            if (unlinkErr) {
+              console.error("Error deleting the image file:", unlinkErr);
+            }
+            // Proceed to callback
+            callback(null, deleteRes);
+          });
+        } else {
+          // No image to delete, proceed to callback
           callback(null, deleteRes);
-        });
-      } else {
-        // No image to delete, proceed to callback
-        callback(null, deleteRes);
-      }
+        }
+      });
     });
   });
 };
@@ -238,6 +247,27 @@ Book.updateStatus = (bookId, statusId, callback) => {
     if (err) callback(err, null);
     else callback(null, res);
   });
+};
+
+// Approve a book and create copies
+Book.approveBook = (bookId, numberOfCopies, callback) => {
+  try {
+    const statusUpdateQuery = "UPDATE books SET status_id = ? WHERE id = ?";
+    const [statusUpdateRes] = db.query(statusUpdateQuery, [2, bookId]);
+
+    BookCopy.createCopies(bookId, numberOfCopies, (copyErr, copyRes) => {
+      if (copyErr) {
+        db.rollback();
+        callback(copyErr, null);
+      } else {
+        db.commit();
+        callback(null, { statusUpdateRes, copyRes });
+      }
+    });
+  } catch (transactionErr) {
+    db.rollback();
+    callback(transactionErr, null);
+  }
 };
 
 module.exports = Book;

@@ -203,3 +203,30 @@ exports.updateBookStatus = (req, res) => {
     }
   });
 };
+
+// Approve a book and create copies
+exports.approveBook = (req, res) => {
+  const { bookId, numberOfCopies } = req.body;
+
+  if (!bookId || !numberOfCopies) {
+    return res
+      .status(400)
+      .json({ message: "Book ID and number of copies are required." });
+  }
+
+  Book.approveBook(bookId, numberOfCopies, (err, result) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({
+          message: "Error approving the book and creating copies.",
+          error: err,
+        });
+    }
+
+    res.status(200).json({
+      message: "Book approved and copies created successfully.",
+      data: result,
+    });
+  });
+};
