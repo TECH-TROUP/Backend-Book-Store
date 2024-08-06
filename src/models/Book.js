@@ -231,4 +231,13 @@ Book.getByStatusId = (statusId, callback) => {
   });
 };
 
+// Update the status of a book
+Book.updateStatus = (bookId, statusId, callback) => {
+  const query = "UPDATE books SET status_id = ? WHERE id = ?";
+  db.query(query, [statusId, bookId], (err, res) => {
+    if (err) callback(err, null);
+    else callback(null, res);
+  });
+};
+
 module.exports = Book;

@@ -35,5 +35,11 @@ router.get("/books/search", bookController.searchBooks);
 router.get("/books/filter", bookController.filterBooks);
 router.get("/books/vendor/:vendorId", bookController.getBooksByVendorId);
 router.get("/books/status/:statusId", bookController.getBooksByStatusId);
+router.put(
+  "/books/:id/status",
+  auth,
+  checkAdminOrVendor,
+  bookController.updateBookStatus
+);
 
 module.exports = router;
