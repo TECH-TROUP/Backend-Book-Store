@@ -41,6 +41,7 @@ router.get("/books/top5", bookController.getTop5BestSellers);
 router.get("/books/popular", bookController.getTop5PopularBooks);
 router.get("/books/top-rated", bookController.getBooksByRating);
 router.get("/books/:id", bookController.getBookById);
+router.get("/books/status/:statusId", bookController.getBooksByStatusId);
 
 // Vendor / Admins
 router.get(
@@ -56,7 +57,6 @@ router.get(
   bookController.getBooksByVendorIdAndStatusId
 );
 
-router.get("/books/status/:statusId", bookController.getBooksByStatusId);
 router.put(
   "/books/:id/status",
   auth,

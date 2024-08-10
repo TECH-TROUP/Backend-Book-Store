@@ -136,12 +136,17 @@ Book.getAll = (callback) => {
   });
 };
 
-// Get a specific book
+// Get a specific book along with category details
 Book.getById = (bookId, callback) => {
-  const query = "SELECT * FROM books WHERE id = ?";
-  db.query(query, [bookId], (err, row) => {
+  const query = `
+    SELECT b.*, c.category_name 
+    FROM books b
+    JOIN categories c ON b.category_id = c.id
+    WHERE b.id = ?`;
+
+  db.query(query, [bookId], (err, rows) => {
     if (err) callback(err, null);
-    else callback(null, row);
+    else callback(null, rows[0]);
   });
 };
 
@@ -331,6 +336,15 @@ Book.getTopBooksByRating = (limit, callback) => {
   db.query(query, [limit], (err, rows) => {
     if (err) callback(err, null);
     else callback(null, rows);
+  });
+};
+
+// Fetch the stock of a book
+Book.getStock = (bookId, callback) => {
+  const query = "SELECT stock FROM books WHERE id = ?";
+  db.query(query, [bookId], (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows[0] ? rows[0].stock : 0);
   });
 };
 
