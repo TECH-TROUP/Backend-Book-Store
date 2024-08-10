@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const userRoutes = require("./routes/userRoutes");
 const bookRoutes = require("./routes/bookRoutes");
+const bookCopyRoutes = require("./routes/bookCopyRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const orderItemRoutes = require("./routes/orderItemRoutes");
@@ -29,6 +30,7 @@ app.use(bodyParser.json());
 
 app.use("/api", userRoutes);
 app.use("/api", bookRoutes);
+app.use("/api", bookCopyRoutes);
 app.use("/api", categoryRoutes);
 app.use("/api", orderRoutes);
 app.use("/api", orderItemRoutes);
