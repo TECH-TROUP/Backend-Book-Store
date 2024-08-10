@@ -4,7 +4,11 @@ const Book = require("../models/Book");
 // Add a book to the user's wishlist
 exports.addToWishlist = (req, res) => {
   const userId = req.user.id;
-  const bookId = req.params.bookId;
+  const { bookId } = req.body;
+
+  if (!bookId) {
+    return res.status(400).json({ error: "Book ID is required" });
+  }
 
   Wishlist.isBookInWishlist(userId, bookId, (err, exists) => {
     if (err) return res.status(500).json({ error: "Internal server error" });
@@ -18,7 +22,9 @@ exports.addToWishlist = (req, res) => {
         return res
           .status(500)
           .json({ error: "Failed to add book to wishlist" });
-      res.status(201).json({ message: "Book added to wishlist" });
+      res
+        .status(201)
+        .json({ message: "Book added to wishlist", success: true });
     });
   });
 };
@@ -26,7 +32,11 @@ exports.addToWishlist = (req, res) => {
 // Remove a book from the user's wishlist
 exports.removeFromWishlist = (req, res) => {
   const userId = req.user.id;
-  const bookId = req.params.bookId;
+  const { bookId } = req.body;
+
+  if (!bookId) {
+    return res.status(400).json({ error: "Book ID is required" });
+  }
 
   Wishlist.remove(userId, bookId, (err, result) => {
     if (err)
@@ -38,7 +48,9 @@ exports.removeFromWishlist = (req, res) => {
       return res.status(404).json({ message: "Book not found in wishlist" });
     }
 
-    res.status(200).json({ message: "Book removed from wishlist" });
+    res
+      .status(200)
+      .json({ message: "Book removed from wishlist", success: true });
   });
 };
 
