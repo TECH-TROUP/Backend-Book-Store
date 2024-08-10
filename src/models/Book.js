@@ -126,8 +126,6 @@ Book.getAll = (callback) => {
            categories.description AS category_description,
            statuses.label AS status_label,
            statuses.description AS status_description,
-           statuses.bg_color AS status_bg_color,
-           statuses.color AS status_text_color
     FROM books
     JOIN categories ON books.category_id = categories.id
     JOIN statuses ON books.status_id = statuses.id`;
@@ -208,12 +206,27 @@ Book.filter = (filters, callback) => {
 
 // Get books by vendor ID
 Book.getByVendorId = (vendorId, callback) => {
-  const query = `SELECT books.*, categories.category_name, categories.description AS category_description, statuses.label AS status_label, statuses.description AS status_description, statuses.bg_color as status_bg_color, statuses.color as status_text_color
+  const query = `SELECT books.*, categories.category_name, categories.description AS category_description, 
+    statuses.label AS status_label, statuses.description AS status_description
     FROM books
     JOIN categories ON books.category_id = categories.id
     JOIN statuses ON books.status_id = statuses.id
     WHERE books.vendor_id = ?`;
   db.query(query, [vendorId], (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows);
+  });
+};
+
+// Get books by vendor ID and status ID
+Book.getByVendorIdAndStatusId = (vendorId, statusId, callback) => {
+  const query = `SELECT books.*, categories.category_name, categories.description AS category_description, 
+    statuses.label AS status_label, statuses.description AS status_description
+    FROM books
+    JOIN categories ON books.category_id = categories.id
+    JOIN statuses ON books.status_id = statuses.id
+    WHERE books.vendor_id = ? AND books.status_id = ?`;
+  db.query(query, [vendorId, statusId], (err, rows) => {
     if (err) callback(err, null);
     else callback(null, rows);
   });
@@ -226,9 +239,7 @@ Book.getByStatusId = (statusId, callback) => {
            categories.category_name, 
            categories.description AS category_description,
            statuses.label AS status_label,
-           statuses.description AS status_description,
-           statuses.bg_color AS status_bg_color,
-           statuses.color AS status_text_color
+           statuses.description AS status_description
     FROM books
     JOIN categories ON books.category_id = categories.id
     JOIN statuses ON books.status_id = statuses.id
@@ -252,22 +263,60 @@ Book.updateStatus = (bookId, statusId, callback) => {
 // Approve a book and create copies
 Book.approveBook = (bookId, numberOfCopies, callback) => {
   try {
-    const statusUpdateQuery = "UPDATE books SET status_id = ? WHERE id = ?";
-    const [statusUpdateRes] = db.query(statusUpdateQuery, [2, bookId]);
-
-    BookCopy.createCopies(bookId, numberOfCopies, (copyErr, copyRes) => {
-      if (copyErr) {
-        db.rollback();
-        callback(copyErr, null);
-      } else {
-        db.commit();
-        callback(null, { statusUpdateRes, copyRes });
+    Book.updateStatus(bookId, 2, (err, res) => {
+      if (err) callback(err, null);
+      else {
+        BookCopy.createCopies(bookId, numberOfCopies, (copyErr, copyRes) => {
+          if (copyErr) {
+            callback(copyErr, null);
+          } else {
+            callback(null, copyRes);
+          }
+        });
       }
     });
-  } catch (transactionErr) {
-    db.rollback();
-    callback(transactionErr, null);
+  } catch (error) {
+    callback(error, null);
   }
+};
+
+// Update the stock of a specific book
+Book.updateStock = (bookId, change, callback) => {
+  const query = "UPDATE books SET stock = stock + ? WHERE id = ?";
+  db.query(query, [change, bookId], (err, res) => {
+    if (err) callback(err, null);
+    else callback(null, res);
+  });
+};
+
+// Get top 5 best-selling books based on purchase count
+Book.getTop5BestSellers = (callback) => {
+  const query = `
+    SELECT id, title, author, price, description, image_url, purchase_count
+    FROM books
+    ORDER BY purchase_count DESC
+    LIMIT 5;
+  `;
+
+  db.query(query, (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows);
+  });
+};
+
+// Get top 5 popular books based on view count
+Book.getTop5PopularBooks = (callback) => {
+  const query = `
+    SELECT id, title, author, price, description, image_url, view_count
+    FROM books
+    ORDER BY view_count DESC
+    LIMIT 5;
+  `;
+
+  db.query(query, (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows);
+  });
 };
 
 module.exports = Book;

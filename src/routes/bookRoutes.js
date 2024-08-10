@@ -7,8 +7,7 @@ const checkVendor = require("../middleware/checkVendor");
 const upload = require("../middleware/upload");
 const checkAdminOrVendor = require("../middleware/checkAdminOrVendor");
 
-// Book routes
-
+// Vendors
 router.post(
   "/books",
   auth,
@@ -29,12 +28,33 @@ router.delete(
   checkAdminOrVendor,
   bookController.deleteBook
 );
+
+// Admins
 router.get("/books", auth, checkAdmin, bookController.getAllBooks);
-router.get("/books/:id", bookController.getBookById);
+router.post("/books/approve", auth, checkAdmin, bookController.approveBook);
+
+// Public
 router.get("/books/category/:categoryId", bookController.getBooksByCategory);
 router.get("/books/search", bookController.searchBooks);
 router.get("/books/filter", bookController.filterBooks);
-router.get("/books/vendor/:vendorId", bookController.getBooksByVendorId);
+router.get("/books/top5", bookController.getTop5BestSellers);
+router.get("/books/popular", bookController.getTop5PopularBooks);
+router.get("/books/:id", bookController.getBookById);
+
+// Vendor / Admins
+router.get(
+  "/books/vendor/:vendorId",
+  auth,
+  checkAdminOrVendor,
+  bookController.getBooksByVendorId
+);
+router.get(
+  "/books/vendor/:vendorId/status/:statusId",
+  auth,
+  checkAdminOrVendor,
+  bookController.getBooksByVendorIdAndStatusId
+);
+
 router.get("/books/status/:statusId", bookController.getBooksByStatusId);
 router.put(
   "/books/:id/status",
@@ -42,7 +62,5 @@ router.put(
   checkAdminOrVendor,
   bookController.updateBookStatus
 );
-
-router.post("/books/approve", auth, checkAdmin, bookController.approveBook);
 
 module.exports = router;
