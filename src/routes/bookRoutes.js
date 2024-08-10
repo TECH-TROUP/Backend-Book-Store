@@ -39,6 +39,7 @@ router.get("/books/search", bookController.searchBooks);
 router.get("/books/filter", bookController.filterBooks);
 router.get("/books/top5", bookController.getTop5BestSellers);
 router.get("/books/popular", bookController.getTop5PopularBooks);
+router.get("/books/top-rated", bookController.getBooksByRating);
 router.get("/books/:id", bookController.getBookById);
 
 // Vendor / Admins

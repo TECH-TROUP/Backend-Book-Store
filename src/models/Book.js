@@ -319,4 +319,19 @@ Book.getTop5PopularBooks = (callback) => {
   });
 };
 
+// Get top books based on rating with a limit provided by the user
+Book.getTopBooksByRating = (limit, callback) => {
+  const query = `
+    SELECT id, title, author, price, description, image_url, rating_average
+    FROM books
+    ORDER BY rating_average DESC
+    LIMIT ?;
+  `;
+
+  db.query(query, [limit], (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows);
+  });
+};
+
 module.exports = Book;
