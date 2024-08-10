@@ -1,4 +1,5 @@
 const Book = require("../models/Book");
+const BookCopy = require("../models/BookCopy");
 
 exports.createBook = (req, res) => {
   const { title, author, price, description, stock, category_id, vendor_id } =
@@ -68,6 +69,15 @@ exports.updateBook = (req, res) => {
       ? `/uploads/${req.file.filename}`
       : existingBook.image_url;
 
+    // Check if the stock value is less than the current stock
+    if (stock < existingBook.stock) {
+      // Prevent updating the stock value and notify the user
+      return res.status(400).send({
+        error:
+          "Stock cannot be reduced directly. Please manually remove excess book copies.",
+      });
+    }
+
     const updatedBook = {
       title,
       author,
@@ -79,12 +89,29 @@ exports.updateBook = (req, res) => {
     };
 
     // Update the book details
-    Book.update(bookId, updatedBook, (err, result) => {
+    Book.update(bookId, updatedBook, (err, updateResult) => {
       if (err) return res.status(500).send(err);
-      if (result.affectedRows === 0) {
+      if (updateResult.affectedRows === 0) {
         return res.status(404).send({ error: "Book not found" });
       }
-      res.status(200).send({ message: "Book updated successfully" });
+
+      // Handle stock changes
+      if (stock > existingBook.stock) {
+        // Increase stock: Add new copies
+        const copiesToAdd = stock - existingBook.stock;
+
+        BookCopy.createCopies(bookId, copiesToAdd, (copyErr, copyResult) => {
+          if (copyErr) {
+            return res.status(500).send({ error: "Failed to add book copies" });
+          }
+          res.status(200).send({
+            message: "Book updated successfully and new copies created",
+          });
+        });
+      } else {
+        // No stock change
+        res.status(200).send({ message: "Book updated successfully" });
+      }
     });
   });
 };
@@ -173,11 +200,26 @@ exports.getBooksByVendorId = (req, res) => {
   });
 };
 
+// Get books by vendor ID and status ID
+exports.getBooksByVendorIdAndStatusId = (req, res) => {
+  const vendorId = req.params.vendorId;
+  const statusId = req.params.statusId;
+
+  Book.getByVendorIdAndStatusId(vendorId, statusId, (err, books) => {
+    if (err) {
+      return res.status(500).json({ error: "Internal server error" });
+    } else {
+      return res.status(200).json(books);
+    }
+  });
+};
+
 exports.getBooksByStatusId = (req, res) => {
   const statusId = req.params.statusId;
 
   Book.getByStatusId(statusId, (err, books) => {
     if (err) {
+      console.log(err);
       return res.status(500).json({ error: "Failed to retrieve books" });
     }
     res.status(200).json(books);
@@ -216,17 +258,35 @@ exports.approveBook = (req, res) => {
 
   Book.approveBook(bookId, numberOfCopies, (err, result) => {
     if (err) {
-      return res
-        .status(500)
-        .json({
-          message: "Error approving the book and creating copies.",
-          error: err,
-        });
+      return res.status(500).json({
+        message: "Error approving the book and creating copies.",
+        error: err,
+      });
     }
 
     res.status(200).json({
       message: "Book approved and copies created successfully.",
       data: result,
     });
+  });
+};
+
+// Controller method to get top 5 best-selling books
+exports.getTop5BestSellers = (req, res) => {
+  Book.getTop5BestSellers((err, books) => {
+    if (err) {
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    res.status(200).json(books);
+  });
+};
+
+// Controller method to get top 5 popular books
+exports.getTop5PopularBooks = (req, res) => {
+  Book.getTop5PopularBooks((err, books) => {
+    if (err) {
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    res.status(200).json(books);
   });
 };
