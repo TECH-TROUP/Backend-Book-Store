@@ -5,10 +5,10 @@ const Category = {};
 // Create a new category
 Category.create = (category, callback) => {
   const query =
-    "INSERT INTO categories (category_name, description, count) VALUES (?, ?, ?)";
+    "INSERT INTO categories (category_name, description) VALUES (?, ?)";
   db.query(
     query,
-    [category.category_name, category.description, category.count || 0],
+    [category.category_name, category.description],
     (err, res) => {
       if (err) callback(err, null);
       else callback(null, res.insertId);
@@ -54,25 +54,6 @@ Category.getById = (categoryId, callback) => {
   db.query(query, [categoryId], (err, row) => {
     if (err) callback(err, null);
     else callback(null, row);
-  });
-};
-
-// Increment count
-Category.incrementCount = (categoryId, callback) => {
-  const query = "UPDATE categories SET count = count + 1 WHERE id = ?";
-  db.query(query, [categoryId], (err, res) => {
-    if (err) callback(err, null);
-    else callback(null, res);
-  });
-};
-
-// Decrement count
-Category.decrementCount = (categoryId, callback) => {
-  const query =
-    "UPDATE categories SET count = count - 1 WHERE id = ? AND count > 0";
-  db.query(query, [categoryId], (err, res) => {
-    if (err) callback(err, null);
-    else callback(null, res);
   });
 };
 

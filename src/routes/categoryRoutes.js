@@ -21,17 +21,4 @@ router.delete(
 router.get("/categories", categoryController.getAllCategories);
 router.get("/categories/:id", categoryController.getCategoryById);
 
-router.post(
-  "/categories/:id/increment",
-  auth,
-  checkAdmin,
-  categoryController.incrementCategoryCount
-);
-router.post(
-  "/categories/:id/decrement",
-  auth,
-  checkAdmin,
-  categoryController.decrementCategoryCount
-);
-
 module.exports = router;
