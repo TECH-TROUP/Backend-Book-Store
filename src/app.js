@@ -8,12 +8,10 @@ const orderRoutes = require("./routes/orderRoutes");
 const orderItemRoutes = require("./routes/orderItemRoutes");
 const rentalRoutes = require("./routes/rentalRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+const cartRoutes = require("./routes/cartRoutes");
 
 const cors = require("cors");
-
-// const crypto = require("crypto");
-// const secret = crypto.randomBytes(64).toString("hex");
-// console.log(secret);
 
 const app = express();
 
@@ -36,5 +34,7 @@ app.use("/api", orderRoutes);
 app.use("/api", orderItemRoutes);
 app.use("/api", rentalRoutes);
 app.use("/api", paymentRoutes);
+app.use("/api", wishlistRoutes);
+app.use("/api", cartRoutes);
 
 module.exports = app;
