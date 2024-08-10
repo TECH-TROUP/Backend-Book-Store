@@ -290,3 +290,15 @@ exports.getTop5PopularBooks = (req, res) => {
     res.status(200).json(books);
   });
 };
+
+// Get books by rating with a user-defined limit
+exports.getBooksByRating = (req, res) => {
+  const limit = parseInt(req.query.limit) || 5;
+
+  Book.getTopBooksByRating(limit, (err, books) => {
+    if (err) {
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    res.status(200).json(books);
+  });
+};
