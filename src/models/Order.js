@@ -5,16 +5,10 @@ const Order = {};
 // Add a new order
 Order.create = (order, callback) => {
   const query =
-    "INSERT INTO orders (user_id, order_date, total_price, payment_id, status) VALUES (?, ?, ?, ?, ?)";
+    "INSERT INTO orders (user_id, order_date, total_price, payment_id, status) VALUES (?, NOW(), ?, ?, ?)";
   db.query(
     query,
-    [
-      order.user_id,
-      order.order_date,
-      order.total_price,
-      order.payment_id,
-      order.status,
-    ],
+    [order.user_id, order.totalPrice, order.payment_id, order.status],
     (err, res) => {
       if (err) callback(err, null);
       else callback(null, res.insertId);
@@ -31,7 +25,7 @@ Order.update = (orderId, updatedOrder, callback) => {
     [
       updatedOrder.user_id,
       updatedOrder.order_date,
-      updatedOrder.total_price,
+      updatedOrder.totalPrice,
       updatedOrder.payment_id,
       updatedOrder.status,
       orderId,
