@@ -43,7 +43,7 @@ User.getByUsername = (username, callback) => {
 
 User.getById = (userId, callback) => {
   const query =
-    "SELECT id, name, username, email, role_id FROM `book_store_db`.`users` WHERE id = ?";
+    "SELECT id, name, username, email, role_id, address FROM `book_store_db`.`users` WHERE id = ?";
   db.query(query, [userId], (err, row) => {
     if (err) callback(err, null);
     else callback(null, row[0]);
@@ -74,11 +74,25 @@ User.update = (userId, updatedUser, callback) => {
     query += " `password` = ?,";
     params.push(updatedUser.password);
   }
+  if (updatedUser.address) {
+    query += " `address` = ?,";
+    params.push(updatedUser.address);
+  }
 
   query = query.slice(0, -1) + " WHERE `id` = ?";
   params.push(userId);
 
   db.query(query, params, (err, res) => {
+    if (err) callback(err, null);
+    else callback(null, res);
+  });
+};
+
+User.updateAddress = (userId, address, callback) => {
+  let query = "UPDATE `book_store_db`.`users` SET `address` = ? WHERE `id` = ?";
+
+  // Execute the query
+  db.query(query, [address, userId], (err, res) => {
     if (err) callback(err, null);
     else callback(null, res);
   });

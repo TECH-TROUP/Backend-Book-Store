@@ -16,6 +16,8 @@ router.put(
   userController.updateUserRole
 );
 
+router.put("/users/update-address", auth, userController.updateUserAddress);
+
 router.put("/users/:id", auth, userController.updateUser);
 router.get("/users/me", auth, userController.getLoggedInUser);
 router.get("/users/:id", auth, userController.getUserById);
