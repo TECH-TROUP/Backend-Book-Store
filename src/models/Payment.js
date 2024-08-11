@@ -5,15 +5,10 @@ const Payment = {};
 // Create a new payment
 Payment.create = (payment, callback) => {
   const query =
-    "INSERT INTO payments (user_id, payment_method, payment_date, amount) VALUES (?, ?, ?, ?)";
+    "INSERT INTO payments (user_id, payment_method, payment_date, amount) VALUES (?, ?, NOW(), ?)";
   db.query(
     query,
-    [
-      payment.user_id,
-      payment.payment_method,
-      payment.payment_date,
-      payment.amount,
-    ],
+    [payment.user_id, payment.payment_method, payment.amount],
     (err, res) => {
       if (err) callback(err, null);
       else callback(null, res.insertId);
