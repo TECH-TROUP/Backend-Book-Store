@@ -10,6 +10,7 @@ const rentalRoutes = require("./routes/rentalRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const cartRoutes = require("./routes/cartRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 
 const cors = require("cors");
 
@@ -36,5 +37,6 @@ app.use("/api", rentalRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", wishlistRoutes);
 app.use("/api", cartRoutes);
+app.use("/api", reviewRoutes);
 
 module.exports = app;
