@@ -109,7 +109,7 @@ exports.updateBookCopyStatus = (req, res) => {
                 .json({ error: "Failed to get book details" });
             }
 
-            const book = bookResult[0];
+            const book = bookResult;
 
             if (book.stock === 0 && book.status_id !== 13) {
               // Update the book status to Out-of-Stock
@@ -212,7 +212,7 @@ exports.deleteBookCopy = (req, res) => {
             return res.status(404).json({ error: "Book not found" });
           }
 
-          const updatedBook = bookResult[0];
+          const updatedBook = bookResult;
           if (updatedBook.stock <= 0) {
             // Update the book status to out-of-stock (13)
             Book.updateStatus(bookId, 13, (statusErr, statusResult) => {

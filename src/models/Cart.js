@@ -27,9 +27,10 @@ Cart.remove = (userId, bookId, callback) => {
 // Get all items in the cart for a specific user
 Cart.getByUserId = (userId, callback) => {
   const query = `
-    SELECT cart.*, books.title, books.author, books.price, books.image_url
+    SELECT cart.*, books.*, categories.category_name, categories.description AS category_description
     FROM cart
     JOIN books ON cart.book_id = books.id
+    JOIN categories ON books.category_id = categories.id
     WHERE cart.user_id = ?
   `;
   db.query(query, [userId], (err, rows) => {
