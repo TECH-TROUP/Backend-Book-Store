@@ -55,12 +55,46 @@ Order.getAll = (callback) => {
   });
 };
 
-// Get a specific order by ID
 Order.getById = (orderId, callback) => {
-  const query = "SELECT * FROM orders WHERE id = ?";
-  db.query(query, [orderId], (err, row) => {
+  const query = `
+    SELECT o.id AS order_id, o.user_id, o.total_price, o.status_id AS order_status_id, p.id AS payment_id, p.payment_method, p.amount AS payment_amount,
+           oi.id AS order_item_id, oi.book_id, oi.quantity, oi.price AS order_item_price, b.title AS book_title, b.author AS book_author, b.image_url as book_image_url
+    FROM orders o
+    LEFT JOIN payments p ON o.payment_id = p.id
+    LEFT JOIN order_items oi ON o.id = oi.order_id
+    LEFT JOIN books b ON oi.book_id = b.id
+    WHERE o.id = ?;
+  `;
+
+  db.query(query, [orderId], (err, rows) => {
     if (err) callback(err, null);
-    else callback(null, row);
+    else {
+      // Process the rows to structure the data
+      const order = {
+        id: rows[0]?.order_id,
+        user_id: rows[0]?.user_id,
+        totalPrice: rows[0]?.total_price,
+        status_id: rows[0]?.order_status_id,
+        payment: {
+          id: rows[0]?.payment_id,
+          method: rows[0]?.payment_method,
+          amount: rows[0]?.payment_amount,
+        },
+        items: rows.map((row) => ({
+          id: row.order_item_id,
+          book_id: row.book_id,
+          quantity: row.quantity,
+          price: row.order_item_price,
+          book: {
+            title: row.book_title,
+            author: row.book_author,
+            image_url: row.book_image_url,
+          },
+        })),
+      };
+
+      callback(null, order);
+    }
   });
 };
 
