@@ -299,6 +299,7 @@ Book.getTop5BestSellers = (callback) => {
   const query = `
     SELECT id, title, author, price, description, image_url, purchase_count
     FROM books
+    WHERE status_id = 2
     ORDER BY purchase_count DESC
     LIMIT 5;
   `;
@@ -314,6 +315,7 @@ Book.getTop5PopularBooks = (callback) => {
   const query = `
     SELECT id, title, author, price, description, image_url, view_count
     FROM books
+    WHERE status_id = 2
     ORDER BY view_count DESC
     LIMIT 5;
   `;
@@ -329,6 +331,7 @@ Book.getTopBooksByRating = (limit, callback) => {
   const query = `
     SELECT id, title, author, price, description, image_url, rating_average
     FROM books
+    WHERE status_id = 2
     ORDER BY rating_average DESC
     LIMIT ?;
   `;

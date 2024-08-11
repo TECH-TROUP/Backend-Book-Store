@@ -70,7 +70,7 @@ Review.delete = (reviewId, callback) => {
 // Get all reviews for a specific book
 Review.getByBook = (bookId, callback) => {
   const query = `
-        SELECT reviews.*, users.username
+        SELECT reviews.*, users.name as user_name
         FROM reviews
         JOIN users ON reviews.user_id = users.id
         WHERE reviews.book_id = ?
