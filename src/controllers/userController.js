@@ -241,6 +241,23 @@ exports.updateUser = (req, res) => {
   checkUsername();
 };
 
+exports.updateUserAddress = (req, res) => {
+  const userId = req.user.id;
+  const { address } = req.body;
+
+  if (!address) {
+    return res.status(400).json({ error: "Please provide valid fields" });
+  }
+
+  User.updateAddress(userId, address, (err, response) => {
+    if (err) {
+      res.status(500).send({ error: "Error updating user address" });
+    } else {
+      res.status(200).json({ success: true });
+    }
+  });
+};
+
 exports.updateUserRole = (req, res) => {
   const { userId, roleId } = req.body;
 
