@@ -276,11 +276,8 @@ exports.getOrderById = (req, res) => {
   Order.getById(orderId, (err, order) => {
     if (err) {
       res.status(500).json({ error: "Failed to retrieve order", details: err });
-    } else if (!order.length) {
-      // Adjusted to check if the order array is empty
-      res.status(404).json({ error: "Order not found" });
     } else {
-      res.status(200).json(order[0]); // Return the first item in the array
+      res.status(200).json(order);
     }
   });
 };
