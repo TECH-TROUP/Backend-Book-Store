@@ -64,26 +64,58 @@ exports.updateBookCopyStatus = (req, res) => {
   }
 
   // Status IDs that should reduce or increase the stock
-  const decreaseStockStatuses = [6, 7, 8, 9, 10, 11, 12]; //Checked_out, Rented, Returned, Lost, Damaged, In-Repair, Sold
-  const increaseStockStatuses = [4, 5]; //Available-Sale, Available-Rent
-  const previousDecreaseStatuses = [...decreaseStockStatuses, 13]; // Checked_out, Rented, Returned, Lost, Damaged, In-Repair, Sold, Out-of-Stock
+  const decreaseStockSaleStatuses = [12]; // Sold
+  const decreaseStockRentStatuses = [6, 7, 8, 9, 10, 11]; // Checked_out, Rented, Returned, Lost, Damaged, In-Repair
+  const increaseStockSaleStatuses = [4]; // Available-Sale
+  const increaseStockRentStatuses = [5]; // Available-Rent
+  const previousDecreaseSaleStatuses = [...decreaseStockSaleStatuses, 13]; // Sold, Out-of-Stock
+  const previousDecreaseRentStatuses = [...decreaseStockRentStatuses, 13]; // Checked_out, Rented, Returned, Lost, Damaged, In-Repair, Out-of-Stock
 
   let stockChange = 0;
+  let stockRentChange = 0;
 
-  // Logic to reduce stock if transitioning from 4 or 5 to 6-12
+  // Logic to reduce stock if transitioning from Available-Sale to Sold
   if (
-    increaseStockStatuses.includes(previousStatusId) &&
-    decreaseStockStatuses.includes(statusId)
+    increaseStockSaleStatuses.includes(previousStatusId) &&
+    decreaseStockSaleStatuses.includes(statusId)
   ) {
-    stockChange = -1; // Reduce stock
+    stockChange = -1; // Reduce sale stock
   }
 
-  // Logic to increase stock if transitioning from 6-13 to 4 or 5
+  // Logic to increase stock if transitioning from Sold or Out-of-Stock to Available-Sale
   if (
-    previousDecreaseStatuses.includes(previousStatusId) &&
-    increaseStockStatuses.includes(statusId)
+    previousDecreaseSaleStatuses.includes(previousStatusId) &&
+    increaseStockSaleStatuses.includes(statusId)
   ) {
-    stockChange = 1; // Increase stock
+    stockChange = 1; // Increase sale stock
+  }
+
+  // Logic to reduce stock_rent if transitioning from Available-Rent to Checked_out/Rented/Lost/etc.
+  if (
+    increaseStockRentStatuses.includes(previousStatusId) &&
+    decreaseStockRentStatuses.includes(statusId)
+  ) {
+    stockRentChange = -1; // Reduce rent stock
+  }
+
+  // Logic to increase stock_rent if transitioning from Checked_out/Rented/Lost/etc. or Out-of-Stock to Available-Rent
+  if (
+    previousDecreaseRentStatuses.includes(previousStatusId) &&
+    increaseStockRentStatuses.includes(statusId)
+  ) {
+    stockRentChange = 1; // Increase rent stock
+  }
+
+  // Transition from Available-Sale (4) to Available-Rent (5)
+  if (previousStatusId === 4 && statusId === 5) {
+    stockChange = -1; // Reduce sale stock
+    stockRentChange = 1; // Increase rent stock
+  }
+
+  // Transition from Available-Rent (5) to Available-Sale (4)
+  if (previousStatusId === 5 && statusId === 4) {
+    stockChange = 1; // Increase sale stock
+    stockRentChange = -1; // Reduce rent stock
   }
 
   BookCopy.updateStatus(copyId, statusId, (err, result) => {
@@ -95,12 +127,17 @@ exports.updateBookCopyStatus = (req, res) => {
       return res.status(404).json({ error: "Book copy not found" });
     }
 
-    if (stockChange !== 0) {
+    if (stockChange !== 0 || stockRentChange !== 0) {
       // Update the stock in the books table
-      Book.updateStock(bookId, stockChange, (stockErr, stockRes) => {
-        if (stockErr) {
-          return res.status(500).json({ error: "Failed to update stock" });
-        } else {
+      Book.updateStock(
+        bookId,
+        stockChange,
+        stockRentChange,
+        (stockErr, stockRes) => {
+          if (stockErr) {
+            return res.status(500).json({ error: "Failed to update stock" });
+          }
+
           // Check the updated stock value
           Book.getById(bookId, (bookErr, bookResult) => {
             if (bookErr) {
@@ -111,7 +148,11 @@ exports.updateBookCopyStatus = (req, res) => {
 
             const book = bookResult;
 
-            if (book.stock === 0 && book.status_id !== 13) {
+            if (
+              book.stock === 0 &&
+              book.stock_rent === 0 &&
+              book.status_id !== 13
+            ) {
               // Update the book status to Out-of-Stock
               Book.updateStatus(bookId, 13, (statusErr, statusRes) => {
                 if (statusErr) {
@@ -126,7 +167,10 @@ exports.updateBookCopyStatus = (req, res) => {
                     "Book copy status updated successfully and book marked as Out-of-Stock",
                 });
               });
-            } else if (book.stock > 0 && book.status_id === 13) {
+            } else if (
+              (book.stock > 0 || book.stock_rent > 0) &&
+              book.status_id === 13
+            ) {
               // If stock is greater than zero and previous status was Out-of-Stock, update status to Approved
               Book.updateStatus(bookId, 2, (statusErr, statusRes) => {
                 if (statusErr) {
@@ -142,38 +186,20 @@ exports.updateBookCopyStatus = (req, res) => {
                 });
               });
             } else {
-              return res
-                .status(200)
-                .json({ message: "Book copy status updated successfully" });
+              return res.status(200).json({
+                message: "Book copy status updated successfully",
+              });
             }
           });
         }
-      });
+      );
     } else {
-      return res
-        .status(200)
-        .json({ message: "Book copy status updated successfully" });
+      return res.status(200).json({
+        message: "Book copy status updated successfully",
+      });
     }
   });
 };
-
-// Delete a specific copy of a book
-// exports.deleteBookCopy = (req, res) => {
-//   const copyId = req.params.copyId;
-
-//   BookCopy.deleteBookCopy(copyId, (err, result) => {
-//     if (err) {
-//       return res.status(500).json({ error: "Internal server error" });
-//     }
-//     if (result.affectedRows === 0) {
-//       return res.status(404).json({ error: "Book copy not found" });
-//     } else {
-//       return res
-//         .status(200)
-//         .json({ message: "Book copy deleted successfully" });
-//     }
-//   });
-// };
 
 // Delete a specific copy of a book
 exports.deleteBookCopy = (req, res) => {
