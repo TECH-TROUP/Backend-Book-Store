@@ -36,7 +36,7 @@ Book.update = (bookId, updatedBook, callback) => {
       return;
     }
 
-    const book = result[0];
+    const book = result;
     const oldImagePath = book.image_url;
     const newImagePath = updatedBook.image_url;
 
@@ -80,7 +80,7 @@ Book.delete = (bookId, callback) => {
       return;
     }
 
-    const book = result[0];
+    const book = result;
     const imagePath = book.image_url;
 
     // Delete the book copies from the book_copies table

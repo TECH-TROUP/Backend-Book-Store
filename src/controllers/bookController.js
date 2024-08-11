@@ -64,7 +64,7 @@ exports.updateBook = (req, res) => {
       return res.status(404).send({ error: "Book not found" });
     }
 
-    const existingBook = result[0];
+    const existingBook = result;
     const image_url = req.file
       ? `/uploads/${req.file.filename}`
       : existingBook.image_url;
