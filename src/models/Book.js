@@ -348,4 +348,30 @@ Book.getStock = (bookId, callback) => {
   });
 };
 
+// Recalculate and update the book's average rating
+Book.updateBookRating = (bookId, callback) => {
+  const query = `
+    UPDATE books
+    SET rating_average = (
+      SELECT AVG(rating)
+      FROM reviews
+      WHERE book_id = ?
+    )
+    WHERE id = ?
+  `;
+  db.query(query, [bookId, bookId], (err, res) => {
+    if (err) callback(err, null);
+    else callback(null, res.affectedRows);
+  });
+};
+
+// Increment the view count of a specific book
+Book.incrementViewCount = (bookId, callback) => {
+  const query = "UPDATE books SET view_count = view_count + 1 WHERE id = ?";
+  db.query(query, [bookId], (err, res) => {
+    if (err) callback(err, null);
+    else callback(null, res.affectedRows);
+  });
+};
+
 module.exports = Book;
