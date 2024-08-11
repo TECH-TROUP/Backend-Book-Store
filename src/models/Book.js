@@ -152,7 +152,10 @@ Book.getById = (bookId, callback) => {
 
 // Get books by category
 Book.getByCategory = (categoryId, callback) => {
-  const query = "SELECT * FROM books WHERE category_id = ?";
+  const query = `
+  SELECT * FROM books WHERE category_id = ?
+      AND (stock > 0 OR stock_rent > 0)
+  `;
   db.query(query, [categoryId], (err, rows) => {
     if (err) callback(err, null);
     else callback(null, rows);
@@ -285,10 +288,16 @@ Book.approveBook = (bookId, numberOfCopies, callback) => {
   }
 };
 
-// Update the stock of a specific book
-Book.updateStock = (bookId, change, callback) => {
-  const query = "UPDATE books SET stock = stock + ? WHERE id = ?";
-  db.query(query, [change, bookId], (err, res) => {
+// Update the stock and stock_rent of a specific book
+Book.updateStock = (bookId, stockChange, stockRentChange, callback) => {
+  const query = `
+    UPDATE books 
+    SET 
+      stock = stock + ?, 
+      stock_rent = stock_rent + ? 
+    WHERE id = ?`;
+
+  db.query(query, [stockChange, stockRentChange, bookId], (err, res) => {
     if (err) callback(err, null);
     else callback(null, res);
   });
@@ -297,9 +306,10 @@ Book.updateStock = (bookId, change, callback) => {
 // Get top 5 best-selling books based on purchase count
 Book.getTop5BestSellers = (callback) => {
   const query = `
-    SELECT id, title, author, price, description, image_url, purchase_count
+    SELECT id, title, author, price, description, image_url, purchase_count, stock, stock_rent
     FROM books
     WHERE status_id = 2
+      AND (stock > 0 OR stock_rent > 0)
     ORDER BY purchase_count DESC
     LIMIT 5;
   `;
@@ -313,9 +323,10 @@ Book.getTop5BestSellers = (callback) => {
 // Get top 5 popular books based on view count
 Book.getTop5PopularBooks = (callback) => {
   const query = `
-    SELECT id, title, author, price, description, image_url, view_count
+    SELECT id, title, author, price, description, image_url, view_count, stock, stock_rent
     FROM books
     WHERE status_id = 2
+      AND (stock > 0 OR stock_rent > 0)
     ORDER BY view_count DESC
     LIMIT 5;
   `;
@@ -329,9 +340,10 @@ Book.getTop5PopularBooks = (callback) => {
 // Get top books based on rating with a limit provided by the user
 Book.getTopBooksByRating = (limit, callback) => {
   const query = `
-    SELECT id, title, author, price, description, image_url, rating_average
+    SELECT id, title, author, price, description, image_url, rating_average, stock, stock_rent
     FROM books
     WHERE status_id = 2
+      AND (stock > 0 OR stock_rent > 0)
     ORDER BY rating_average DESC
     LIMIT ?;
   `;
@@ -388,6 +400,16 @@ Book.incrementReviewCount = (bookId, callback) => {
   db.query(query, [bookId], (err, result) => {
     if (err) callback(err, null);
     else callback(null, result);
+  });
+};
+
+// Increment the purchase count of a specific book
+Book.incrementPurchaseCount = (bookId, callback) => {
+  const query =
+    "UPDATE books SET purchase_count = purchase_count + 1 WHERE id = ?";
+  db.query(query, [bookId], (err, res) => {
+    if (err) callback(err, null);
+    else callback(null, res.affectedRows);
   });
 };
 
