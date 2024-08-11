@@ -5,10 +5,10 @@ const Order = {};
 // Add a new order
 Order.create = (order, callback) => {
   const query =
-    "INSERT INTO orders (user_id, order_date, total_price, payment_id, status) VALUES (?, NOW(), ?, ?, ?)";
+    "INSERT INTO orders (user_id, order_date, total_price, payment_id, status_id) VALUES (?, NOW(), ?, ?, ?)";
   db.query(
     query,
-    [order.user_id, order.totalPrice, order.payment_id, order.status],
+    [order.user_id, order.totalPrice, order.payment_id, order.status_id],
     (err, res) => {
       if (err) callback(err, null);
       else callback(null, res.insertId);
