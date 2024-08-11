@@ -25,6 +25,19 @@ BookCopy.getByBookId = (bookId, callback) => {
   });
 };
 
+// Get available copies of a specific book with a specific status
+BookCopy.getAvailableCopies = (bookId, limit, callback) => {
+  const query = `
+    SELECT * FROM book_copies 
+    WHERE book_id = ? AND status_id = 4 
+    LIMIT ?
+  `;
+  db.query(query, [bookId, limit], (err, rows) => {
+    if (err) callback(err, null);
+    else callback(null, rows);
+  });
+};
+
 BookCopy.getByBookIdAndStatus = (bookId, statusId, callback) => {
   const query = `
     SELECT 
