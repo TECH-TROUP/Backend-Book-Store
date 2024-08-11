@@ -139,6 +139,14 @@ exports.getAllBooks = (req, res) => {
 exports.getBookById = (req, res) => {
   const bookId = req.params.id;
 
+  // Increment the view count
+  Book.incrementViewCount(bookId, (err, result) => {
+    if (err) {
+      console.error("Failed to increment view count", err);
+    }
+  });
+
+  // Retrieve the book by ID
   Book.getById(bookId, (err, book) => {
     if (err) res.status(500).send(err);
     else if (!book) {
