@@ -1,4 +1,5 @@
 const Review = require("../models/Review");
+const Book = require("../models/Book");
 
 // Create a new review
 exports.createReview = (req, res) => {
@@ -11,9 +12,21 @@ exports.createReview = (req, res) => {
 
   Review.create(bookId, userId, rating, comment, (err, result) => {
     if (err) return res.status(500).json({ error: "Failed to create review" });
-    res
-      .status(201)
-      .json({ message: "Review created successfully", success: true });
+
+    // Update the review count for the book
+    try {
+      Book.incrementReviewCount(bookId, (err, incrementRes) => {
+        if (err) {
+          console.error("Failed to increment view count", err);
+        }
+      });
+      res
+        .status(201)
+        .json({ message: "Review created successfully", success: true });
+    } catch (updateError) {
+      console.error("Failed to update review count:", updateError);
+      res.status(500).json({ error: "Failed to update review count" });
+    }
   });
 };
 

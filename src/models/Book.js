@@ -377,4 +377,18 @@ Book.incrementViewCount = (bookId, callback) => {
   });
 };
 
+// Increment the review count for a specific book
+Book.incrementReviewCount = (bookId, callback) => {
+  const query = `
+    UPDATE books
+    SET review_count = review_count + 1
+    WHERE id = ?
+  `;
+
+  db.query(query, [bookId], (err, result) => {
+    if (err) callback(err, null);
+    else callback(null, result);
+  });
+};
+
 module.exports = Book;
