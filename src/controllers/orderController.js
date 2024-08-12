@@ -284,16 +284,14 @@ exports.getOrderById = (req, res) => {
 
 // Get orders by user ID
 exports.getOrdersByUserId = (req, res) => {
-  const userId = req.params.user_id;
+  const userId = req.user.id;
+  const { statusId } = req.body;
 
-  // Call the getByUserId method from the Order model
-  Order.getByUserId(userId, (err, orders) => {
+  Order.getByUserId(userId, statusId, (err, orders) => {
     if (err) {
       res
         .status(500)
         .json({ error: "Failed to retrieve orders", details: err });
-    } else if (orders.length === 0) {
-      res.status(404).json({ error: "No orders found for this user" });
     } else {
       res.status(200).json(orders);
     }
