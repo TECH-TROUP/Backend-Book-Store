@@ -1,4 +1,5 @@
-npm install to Install all packages 
+##Before starting the backend app, install all the packages
+### npm install 
 
 
 SETUP
@@ -7,7 +8,12 @@ SETUP
 3.	Download and install MySQL :: Workbench
 4.	Download and install MySQL :: 
 
-Backend
-Language: JavaScript
-Packages used (it makes that backend: node js, express js
+#Backend
+##Language: JavaScript
+##Packages used (it makes that backend: node js, express js)
+
+##To run 
+### node server.js
+
+Make sure the sql server is running
 
