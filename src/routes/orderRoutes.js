@@ -22,6 +22,6 @@ router.get("/orders", auth, checkAdmin, orderController.getAllOrders);
 router.get("/orders/:id", auth, orderController.getOrderById);
 
 // Get orders by user ID - user must be authenticated
-router.get("/user-orders/:user_id", auth, orderController.getOrdersByUserId);
+router.post("/user-orders", auth, orderController.getOrdersByUserId);
 
 module.exports = router;
