@@ -98,12 +98,68 @@ Order.getById = (orderId, callback) => {
   });
 };
 
-// Get orders by user ID
-Order.getByUserId = (userId, callback) => {
-  const query = "SELECT * FROM orders WHERE user_id = ?";
-  db.query(query, [userId], (err, rows) => {
+Order.getByUserId = (userId, statusId, callback) => {
+  let query = `
+    SELECT o.id AS order_id, o.user_id, o.total_price, o.status_id AS order_status_id, 
+           os.label AS order_status_label, 
+           p.id AS payment_id, p.payment_method, p.amount AS payment_amount,
+           oi.id AS order_item_id, oi.book_id, oi.quantity, oi.price AS order_item_price, 
+           b.title AS book_title, b.author AS book_author, b.image_url as book_image_url
+    FROM orders o
+    LEFT JOIN payments p ON o.payment_id = p.id
+    LEFT JOIN order_items oi ON o.id = oi.order_id
+    LEFT JOIN books b ON oi.book_id = b.id
+    LEFT JOIN order_statuses os ON o.status_id = os.id
+    WHERE o.user_id = ?`;
+
+  const params = [userId];
+
+  if (statusId) {
+    query += " AND o.status_id = ?";
+    params.push(statusId);
+  }
+
+  db.query(query, params, (err, rows) => {
     if (err) callback(err, null);
-    else callback(null, rows);
+    else {
+      // Group orders by order ID
+      const orders = {};
+      rows.forEach((row) => {
+        if (!orders[row.order_id]) {
+          orders[row.order_id] = {
+            id: row.order_id,
+            user_id: row.user_id,
+            totalPrice: row.total_price,
+            status: {
+              id: row.order_status_id,
+              label: row.order_status_label,
+            },
+            payment: {
+              id: row.payment_id,
+              method: row.payment_method,
+              amount: row.payment_amount,
+            },
+            items: [],
+          };
+        }
+
+        orders[row.order_id].items.push({
+          id: row.order_item_id,
+          book_id: row.book_id,
+          quantity: row.quantity,
+          price: row.order_item_price,
+          book: {
+            title: row.book_title,
+            author: row.book_author,
+            image_url: row.book_image_url,
+          },
+        });
+      });
+
+      // Convert orders object to an array
+      const ordersArray = Object.values(orders);
+      callback(null, ordersArray);
+    }
   });
 };
 
