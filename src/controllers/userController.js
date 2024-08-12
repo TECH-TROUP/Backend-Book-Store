@@ -80,7 +80,7 @@ exports.loginUser = (req, res) => {
             email: user.email,
           },
           process.env.JWT_SECRET,
-          { expiresIn: "1h" }
+          { expiresIn: "4h" }
         );
         res.status(200).json({ token });
       } else {
@@ -197,7 +197,7 @@ exports.updateUser = (req, res) => {
                   email: req.user.email,
                 },
                 process.env.JWT_SECRET,
-                { expiresIn: "1h" }
+                { expiresIn: "4h" }
               );
 
               res.status(200).json({
@@ -226,7 +226,7 @@ exports.updateUser = (req, res) => {
               email: req.user.email,
             },
             process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+            { expiresIn: "4h" }
           );
 
           res.status(200).json({
