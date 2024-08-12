@@ -11,6 +11,9 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const vendorRoutes = require("./routes/vendorRoutes");
+
 
 const cors = require("cors");
 
@@ -38,5 +41,7 @@ app.use("/api", paymentRoutes);
 app.use("/api", wishlistRoutes);
 app.use("/api", cartRoutes);
 app.use("/api", reviewRoutes);
+app.use("/api", adminRoutes);
+app.use("/api", vendorRoutes);
 
 module.exports = app;
